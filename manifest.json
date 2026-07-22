@@ -1,0 +1,47 @@
+{
+  "id": "securonix_snypr",
+  "name": "Securonix SNYPR",
+  "name_en": "Securonix SNYPR",
+  "version": "1.0.0",
+  "description": "Consulta de incidentes y violaciones en Securonix SNYPR (SIEM): listar incidentes, consultar el detalle de un incidente, y actualizar su estado.",
+  "description_en": "Query incidents and violations in Securonix SNYPR (SIEM): list incidents, get an incident's details, and update its status.",
+  "category": "cybersecurity",
+  "category_en": "cybersecurity",
+  "keywords": ["securonix", "snypr", "siem", "incidentes", "incidents", "violaciones", "violations", "ciberseguridad", "cybersecurity", "ueba"],
+  "icon": "icon.svg",
+  "library": {
+    "package": "ruvic-securonix-snypr-connector",
+    "install": "pip install git+https://github.com/tu-org/conector-securonix-snypr.git#subdirectory=lib",
+    "import_name": "ruvic_securonix_snypr_connector"
+  },
+  "auth_modes": [
+    {
+      "id": "token",
+      "label": "Usuario y contraseña (token generado automáticamente)",
+      "fields": [
+        { "key": "base_url", "label": "URL base del tenant", "type": "text", "required": true, "placeholder": "https://miempresa.securonix.net", "help_text": "Formato: hostname o IP, incluyendo /snypr si tu instalación lo requiere (confírmalo con el administrador de Securonix)." },
+        { "key": "username", "label": "Usuario", "type": "text", "required": true, "help_text": "Usuario de servicio dedicado a esta integración, con acceso al módulo de gestión de incidentes." },
+        { "key": "password", "label": "Contraseña", "type": "password", "secret": true, "required": true },
+        { "key": "tenant_name", "label": "Nombre del tenant (opcional)", "type": "text", "required": false, "help_text": "Solo necesario en instalaciones multi-tenant (MSSP). Déjalo vacío en instalaciones estándar." },
+        { "key": "token_validity_days", "label": "Validez del token (días)", "type": "number", "required": false, "default": "365" },
+        { "key": "verify_ssl", "label": "Verificar certificado SSL", "type": "boolean", "required": false, "default": "true" },
+        { "key": "token_path", "label": "Ruta del endpoint de token (avanzado)", "type": "text", "required": false, "default": "/ws/token/generate", "help_text": "Solo cambia esto si tu tenant usa una ruta distinta a la estándar documentada por Securonix." },
+        { "key": "list_incidents_path", "label": "Ruta para listar incidentes (avanzado)", "type": "text", "required": false, "default": "/ws/incident/list" },
+        { "key": "get_incident_path", "label": "Ruta para el detalle de un incidente (avanzado)", "type": "text", "required": false, "default": "/ws/incident/details" },
+        { "key": "update_status_path", "label": "Ruta para actualizar estado (avanzado)", "type": "text", "required": false, "default": "/ws/incident/actions" },
+        { "key": "request_timeout", "label": "Timeout de peticiones (segundos)", "type": "number", "required": false, "default": "30" }
+      ]
+    }
+  ],
+  "env_prefix": "RUVIC_SECURONIX_SNYPR_",
+  "operations": [
+    "siem.list_incidents",
+    "siem.get_incident_detail",
+    "siem.update_incident_status"
+  ],
+  "test_connection": true,
+  "docs": {
+    "skill": "SKILL.md",
+    "permissions_note": "El usuario configurado necesita acceso al módulo de gestión de incidentes de Securonix, con permiso de lectura (para listar/consultar) y de actualización de estado (para update_incident_status). Usa un usuario de servicio dedicado a esta integración, no una cuenta de administrador de la plataforma. Este conector no crea ni elimina incidentes, ni gestiona whitelists/watchlists/lookup tables."
+  }
+}

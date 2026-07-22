@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Conector Securonix SNYPR — Ruvic</title>
+  <link rel="stylesheet" href="assets/ruvic.css">
+</head>
+<body>
+  <main class="ruvic-container">
+    <nav class="ruvic-toc" aria-label="Índice">
+      <h2 data-i18n="toc_titulo">Contenido</h2>
+      <ol>
+        <li><a href="#que-es" data-i18n="toc_que_es">¿Qué es y para qué sirve?</a></li>
+        <li><a href="#prerrequisitos" data-i18n="toc_prerrequisitos">Prerrequisitos</a></li>
+        <li><a href="#configuracion-fabricante" data-i18n="toc_fabricante">Configuración en el fabricante</a></li>
+        <li><a href="#permisos" data-i18n="toc_permisos">Permisos requeridos</a></li>
+        <li><a href="#configuracion-ruvic" data-i18n="toc_ruvic">Configuración en Ruvic</a></li>
+        <li><a href="#verificacion" data-i18n="toc_verificacion">Verificación</a></li>
+        <li><a href="#solucion-problemas" data-i18n="toc_problemas">Solución de problemas</a></li>
+        <li><a href="#faq-seguridad" data-i18n="toc_faq">Preguntas frecuentes y notas de seguridad</a></li>
+      </ol>
+    </nav>
+
+    <h1 data-i18n="titulo">Conector Securonix SNYPR</h1>
+    <p class="guide-updated">{{ULTIMA_ACTUALIZACION}}</p>
+
+    <section>
+      <h2 id="que-es" data-i18n="que_es_h2">¿Qué es y para qué sirve?</h2>
+      <p data-i18n="que_es_p1">El conector Securonix SNYPR permite que el agente de Ruvic consulte y gestione incidentes de seguridad detectados por la plataforma SIEM/UEBA de Securonix — listar incidentes, ver el detalle completo de uno específico, o actualizar su estado.</p>
+      <p data-i18n="que_es_p2">Una vez configurado, puedes pedirle al agente cosas como:</p>
+      <ul>
+        <li data-i18n="que_es_li1">"¿Qué incidentes críticos están abiertos ahora mismo?"</li>
+        <li data-i18n="que_es_li2">"Dame el detalle completo del incidente 12345."</li>
+        <li data-i18n="que_es_li3">"Marca el incidente 12345 como cerrado, fue un falso positivo."</li>
+      </ul>
+      <p data-i18n="que_es_p3">Operaciones soportadas:</p>
+      <table>
+        <thead><tr><th data-i18n="tabla_op_col1">Operación</th><th data-i18n="tabla_op_col2">Qué hace</th></tr></thead>
+        <tbody>
+          <tr><td><code>siem.list_incidents</code></td><td data-i18n="tabla_op_fila1">Lista incidentes, con filtros opcionales (estado, prioridad, fecha)</td></tr>
+          <tr><td><code>siem.get_incident_detail</code></td><td data-i18n="tabla_op_fila2">Consulta el detalle completo de un incidente puntual</td></tr>
+          <tr><td><code>siem.update_incident_status</code></td><td data-i18n="tabla_op_fila3">Actualiza el estado de un incidente</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-info">
+        <span class="callout-title" data-i18n="callout_alcance_titulo">Fuera de alcance a propósito</span>
+        <span data-i18n="callout_alcance_texto">Este conector no crea ni elimina incidentes, y no gestiona whitelists, watchlists, ni lookup tables — esas capacidades quedaron fuera de esta versión.</span>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="prerrequisitos" data-i18n="prereq_h2">Prerrequisitos</h2>
+      <ul>
+        <li data-i18n="prereq_li1">Un tenant de <strong>Securonix SNYPR</strong> (cloud u on-premise) accesible por red desde donde corre Ruvic.</li>
+        <li data-i18n="prereq_li2">Un <strong>usuario de servicio dedicado</strong>, con acceso al módulo de gestión de incidentes — nunca una cuenta de administrador de la plataforma.</li>
+        <li data-i18n="prereq_li3">Las <strong>rutas exactas de la API REST</strong> para la versión/instalación específica del tenant — pueden variar entre versiones (6.3, 6.4, cloud vs on-prem).</li>
+        <li data-i18n="prereq_li4">Para pruebas: idealmente un tenant de pruebas separado del productivo — no existe una versión de Securonix descargable para levantar localmente.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 id="configuracion-fabricante" data-i18n="fabricante_h2">Configuración en el fabricante</h2>
+      <ol class="ruvic-steps">
+        <li>
+          <strong data-i18n="fabricante_paso1_titulo">Pide al administrador de Securonix un usuario de servicio dedicado.</strong>
+          <p data-i18n="fabricante_paso1_texto">Debe tener acceso al módulo de gestión de incidentes (lectura, y escritura si se va a usar la actualización de estado), sin permisos administrativos de la plataforma.</p>
+        </li>
+        <li>
+          <strong data-i18n="fabricante_paso2_titulo">Confirma la URL exacta del tenant.</strong>
+          <p data-i18n="fabricante_paso2_texto">El formato típico es el hostname o IP de la instalación, a veces incluyendo <code>/snypr</code> al final — confírmalo con el administrador, varía según la instalación.</p>
+        </li>
+        <li>
+          <strong data-i18n="fabricante_paso3_titulo">Confirma las rutas exactas de la API REST de incidentes para esa versión.</strong>
+          <p data-i18n="fabricante_paso3_texto">Securonix provee un Postman collection para probar su API — pide al administrador que confirme (o te comparta) las rutas de "listar incidentes", "detalle de incidente" y "actualizar estado" para la versión específica del tenant, ya que han cambiado entre versiones.</p>
+        </li>
+        <li>
+          <strong data-i18n="fabricante_paso4_titulo">Prueba la generación de token desde línea de comandos (opcional pero recomendado).</strong>
+        </li>
+      </ol>
+      <pre><code>curl --request GET \
+  --url 'https://TU_TENANT/ws/token/generate' \
+  --header 'username: TU_USUARIO' \
+  --header 'password: TU_CONTRASEÑA' \
+  --header 'validity: 365'</code></pre>
+      <p data-i18n="fabricante_curl_nota">Una respuesta con un token (texto o JSON) confirma que las credenciales funcionan.</p>
+    </section>
+
+    <section>
+      <h2 id="permisos" data-i18n="permisos_h2">Permisos requeridos</h2>
+      <table>
+        <thead><tr><th data-i18n="permisos_tabla_col1">Permiso</th><th data-i18n="permisos_tabla_col2">Para qué lo usa el conector</th></tr></thead>
+        <tbody>
+          <tr><td data-i18n="permisos_lectura">Lectura de incidentes</td><td data-i18n="permisos_lectura_uso">Necesario para <code>list_incidents</code> y <code>get_incident_detail</code></td></tr>
+          <tr><td data-i18n="permisos_escritura">Actualización de estado de incidentes</td><td data-i18n="permisos_escritura_uso">Necesario solo si se va a usar <code>update_incident_status</code></td></tr>
+        </tbody>
+      </table>
+      <p data-i18n="permisos_nota">No otorgues permisos administrativos de la plataforma, ni acceso a módulos que este conector no usa (whitelists, watchlists, lookup tables, configuración del sistema).</p>
+    </section>
+
+    <section>
+      <h2 id="configuracion-ruvic" data-i18n="ruvic_h2">Configuración en Ruvic</h2>
+      <p data-i18n="ruvic_p1">Entra a <strong>Settings → Conectores</strong>, busca la tarjeta <strong>Securonix SNYPR</strong> y pulsa <strong>Configurar</strong>.</p>
+      <p data-i18n="ruvic_p2">Completa la <strong>URL base</strong>, el <strong>usuario</strong> y <strong>contraseña</strong> del usuario de servicio. Deja los campos avanzados (rutas de API, validez del token) en sus valores por defecto salvo que hayas confirmado que tu tenant usa rutas distintas.</p>
+      <p data-i18n="ruvic_p3">Guarda y pulsa <span class="ruvic-button" data-i18n="boton_probar_conexion">Probar conexión</span>.</p>
+    </section>
+
+    <section>
+      <h2 id="verificacion" data-i18n="verificacion_h2">Verificación</h2>
+      <ol class="ruvic-steps">
+        <li>
+          <strong data-i18n="verificacion_paso1_titulo">Test de conexión exitoso.</strong>
+          <p data-i18n="verificacion_paso1_texto">El botón <em>Probar conexión</em> debe responder: <em>"Conexión exitosa a [URL del tenant]"</em>.</p>
+        </li>
+        <li>
+          <strong data-i18n="verificacion_paso2_titulo">Prueba mínima con el agente.</strong>
+          <p data-i18n="verificacion_paso2_texto">Pide algo de solo lectura primero:</p>
+          <blockquote data-i18n="verificacion_paso2_cita">"¿Qué incidentes abiertos hay?"</blockquote>
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2 id="solucion-problemas" data-i18n="problemas_h2">Solución de problemas</h2>
+      <table>
+        <thead><tr><th data-i18n="problemas_tabla_col1">Mensaje / síntoma</th><th data-i18n="problemas_tabla_col2">Causa probable y solución</th></tr></thead>
+        <tbody>
+          <tr><td data-i18n="problemas_fila1_sintoma">"No se pudo generar el token..."</td><td data-i18n="problemas_fila1_causa">Usuario o contraseña incorrectos. Verifica con el administrador de Securonix.</td></tr>
+          <tr><td data-i18n="problemas_fila2_sintoma">"No encontrado" en list_incidents/get_incident_detail (HTTP 404)</td><td data-i18n="problemas_fila2_causa">Lo más probable es que la ruta configurada para ese endpoint no coincida con la de tu tenant — confírmala con el administrador y ajusta el campo avanzado correspondiente, en vez de asumir que no hay datos.</td></tr>
+          <tr><td data-i18n="problemas_fila3_sintoma">"Permisos insuficientes" (HTTP 403)</td><td data-i18n="problemas_fila3_causa">El usuario de servicio no tiene acceso al módulo de gestión de incidentes, o le falta el permiso de escritura para actualizar estados.</td></tr>
+          <tr><td data-i18n="problemas_fila4_sintoma">"No se pudo conectar..." (timeout/red)</td><td data-i18n="problemas_fila4_causa">El tenant no es alcanzable desde donde corre Ruvic — puede requerir VPN o whitelist de IP.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2 id="faq-seguridad" data-i18n="faq_h2">Preguntas frecuentes y notas de seguridad</h2>
+      <h3 data-i18n="faq_p1_titulo">¿El agente puede crear o eliminar incidentes?</h3>
+      <p data-i18n="faq_p1_texto">No. Esta versión del conector solo lista, consulta detalle, y actualiza el estado de incidentes existentes.</p>
+
+      <h3 data-i18n="faq_p2_titulo">¿Por qué algunas rutas de la API son configurables?</h3>
+      <p data-i18n="faq_p2_texto">Porque Securonix ha cambiado los nombres de sus endpoints entre versiones (6.3, 6.4, cloud vs on-prem), y no hay una única ruta universal documentada públicamente. Dejarlas configurables evita tener que esperar un cambio de código si tu tenant usa nombres distintos.</p>
+
+      <h3 data-i18n="faq_p3_titulo">¿Dónde queda guardada la contraseña?</h3>
+      <p data-i18n="faq_p3_texto">Como secreto en el almacén de credenciales de la plataforma. La interfaz nunca vuelve a mostrarla.</p>
+
+      <div class="callout callout-warning">
+        <span class="callout-title" data-i18n="buenas_practicas_titulo">Buenas prácticas</span>
+        <span data-i18n="buenas_practicas_texto">Usa siempre un usuario de servicio dedicado, nunca una cuenta administrativa; confirma las rutas de API exactas con el administrador antes de dar por sentado que el conector "no encuentra" algo; y confirma la intención del usuario antes de cambiar el estado de un incidente real.</span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    window.I18N = window.I18N || {};
+    window.I18N['securonix_snypr'] = {
+      es: {
+        "toc_titulo": "Contenido",
+        "toc_que_es": "¿Qué es y para qué sirve?",
+        "toc_prerrequisitos": "Prerrequisitos",
+        "toc_fabricante": "Configuración en el fabricante",
+        "toc_permisos": "Permisos requeridos",
+        "toc_ruvic": "Configuración en Ruvic",
+        "toc_verificacion": "Verificación",
+        "toc_problemas": "Solución de problemas",
+        "toc_faq": "Preguntas frecuentes y notas de seguridad",
+        "titulo": "Conector Securonix SNYPR",
+        "que_es_h2": "¿Qué es y para qué sirve?",
+        "que_es_p1": "El conector Securonix SNYPR permite que el agente de Ruvic consulte y gestione incidentes de seguridad detectados por la plataforma SIEM/UEBA de Securonix — listar incidentes, ver el detalle completo de uno específico, o actualizar su estado.",
+        "que_es_p2": "Una vez configurado, puedes pedirle al agente cosas como:",
+        "que_es_li1": "\"¿Qué incidentes críticos están abiertos ahora mismo?\"",
+        "que_es_li2": "\"Dame el detalle completo del incidente 12345.\"",
+        "que_es_li3": "\"Marca el incidente 12345 como cerrado, fue un falso positivo.\"",
+        "que_es_p3": "Operaciones soportadas:",
+        "tabla_op_col1": "Operación",
+        "tabla_op_col2": "Qué hace",
+        "tabla_op_fila1": "Lista incidentes, con filtros opcionales (estado, prioridad, fecha)",
+        "tabla_op_fila2": "Consulta el detalle completo de un incidente puntual",
+        "tabla_op_fila3": "Actualiza el estado de un incidente",
+        "callout_alcance_titulo": "Fuera de alcance a propósito",
+        "callout_alcance_texto": "Este conector no crea ni elimina incidentes, y no gestiona whitelists, watchlists, ni lookup tables — esas capacidades quedaron fuera de esta versión.",
+        "prereq_h2": "Prerrequisitos",
+        "prereq_li1": "Un tenant de <strong>Securonix SNYPR</strong> (cloud u on-premise) accesible por red desde donde corre Ruvic.",
+        "prereq_li2": "Un <strong>usuario de servicio dedicado</strong>, con acceso al módulo de gestión de incidentes — nunca una cuenta de administrador de la plataforma.",
+        "prereq_li3": "Las <strong>rutas exactas de la API REST</strong> para la versión/instalación específica del tenant — pueden variar entre versiones (6.3, 6.4, cloud vs on-prem).",
+        "prereq_li4": "Para pruebas: idealmente un tenant de pruebas separado del productivo — no existe una versión de Securonix descargable para levantar localmente.",
+        "fabricante_h2": "Configuración en el fabricante",
+        "fabricante_paso1_titulo": "Pide al administrador de Securonix un usuario de servicio dedicado.",
+        "fabricante_paso1_texto": "Debe tener acceso al módulo de gestión de incidentes (lectura, y escritura si se va a usar la actualización de estado), sin permisos administrativos de la plataforma.",
+        "fabricante_paso2_titulo": "Confirma la URL exacta del tenant.",
+        "fabricante_paso2_texto": "El formato típico es el hostname o IP de la instalación, a veces incluyendo <code>/snypr</code> al final — confírmalo con el administrador, varía según la instalación.",
+        "fabricante_paso3_titulo": "Confirma las rutas exactas de la API REST de incidentes para esa versión.",
+        "fabricante_paso3_texto": "Securonix provee un Postman collection para probar su API — pide al administrador que confirme (o te comparta) las rutas de \"listar incidentes\", \"detalle de incidente\" y \"actualizar estado\" para la versión específica del tenant, ya que han cambiado entre versiones.",
+        "fabricante_paso4_titulo": "Prueba la generación de token desde línea de comandos (opcional pero recomendado).",
+        "fabricante_curl_nota": "Una respuesta con un token (texto o JSON) confirma que las credenciales funcionan.",
+        "permisos_h2": "Permisos requeridos",
+        "permisos_tabla_col1": "Permiso",
+        "permisos_tabla_col2": "Para qué lo usa el conector",
+        "permisos_lectura": "Lectura de incidentes",
+        "permisos_lectura_uso": "Necesario para <code>list_incidents</code> y <code>get_incident_detail</code>",
+        "permisos_escritura": "Actualización de estado de incidentes",
+        "permisos_escritura_uso": "Necesario solo si se va a usar <code>update_incident_status</code>",
+        "permisos_nota": "No otorgues permisos administrativos de la plataforma, ni acceso a módulos que este conector no usa (whitelists, watchlists, lookup tables, configuración del sistema).",
+        "ruvic_h2": "Configuración en Ruvic",
+        "ruvic_p1": "Entra a <strong>Settings → Conectores</strong>, busca la tarjeta <strong>Securonix SNYPR</strong> y pulsa <strong>Configurar</strong>.",
+        "ruvic_p2": "Completa la <strong>URL base</strong>, el <strong>usuario</strong> y <strong>contraseña</strong> del usuario de servicio. Deja los campos avanzados (rutas de API, validez del token) en sus valores por defecto salvo que hayas confirmado que tu tenant usa rutas distintas.",
+        "ruvic_p3": "Guarda y pulsa",
+        "boton_probar_conexion": "Probar conexión",
+        "verificacion_h2": "Verificación",
+        "verificacion_paso1_titulo": "Test de conexión exitoso.",
+        "verificacion_paso1_texto": "El botón <em>Probar conexión</em> debe responder: <em>\"Conexión exitosa a [URL del tenant]\"</em>.",
+        "verificacion_paso2_titulo": "Prueba mínima con el agente.",
+        "verificacion_paso2_texto": "Pide algo de solo lectura primero:",
+        "verificacion_paso2_cita": "\"¿Qué incidentes abiertos hay?\"",
+        "problemas_h2": "Solución de problemas",
+        "problemas_tabla_col1": "Mensaje / síntoma",
+        "problemas_tabla_col2": "Causa probable y solución",
+        "problemas_fila1_sintoma": "\"No se pudo generar el token...\"",
+        "problemas_fila1_causa": "Usuario o contraseña incorrectos. Verifica con el administrador de Securonix.",
+        "problemas_fila2_sintoma": "\"No encontrado\" en list_incidents/get_incident_detail (HTTP 404)",
+        "problemas_fila2_causa": "Lo más probable es que la ruta configurada para ese endpoint no coincida con la de tu tenant — confírmala con el administrador y ajusta el campo avanzado correspondiente, en vez de asumir que no hay datos.",
+        "problemas_fila3_sintoma": "\"Permisos insuficientes\" (HTTP 403)",
+        "problemas_fila3_causa": "El usuario de servicio no tiene acceso al módulo de gestión de incidentes, o le falta el permiso de escritura para actualizar estados.",
+        "problemas_fila4_sintoma": "\"No se pudo conectar...\" (timeout/red)",
+        "problemas_fila4_causa": "El tenant no es alcanzable desde donde corre Ruvic — puede requerir VPN o whitelist de IP.",
+        "faq_h2": "Preguntas frecuentes y notas de seguridad",
+        "faq_p1_titulo": "¿El agente puede crear o eliminar incidentes?",
+        "faq_p1_texto": "No. Esta versión del conector solo lista, consulta detalle, y actualiza el estado de incidentes existentes.",
+        "faq_p2_titulo": "¿Por qué algunas rutas de la API son configurables?",
+        "faq_p2_texto": "Porque Securonix ha cambiado los nombres de sus endpoints entre versiones (6.3, 6.4, cloud vs on-prem), y no hay una única ruta universal documentada públicamente. Dejarlas configurables evita tener que esperar un cambio de código si tu tenant usa nombres distintos.",
+        "faq_p3_titulo": "¿Dónde queda guardada la contraseña?",
+        "faq_p3_texto": "Como secreto en el almacén de credenciales de la plataforma. La interfaz nunca vuelve a mostrarla.",
+        "buenas_practicas_titulo": "Buenas prácticas",
+        "buenas_practicas_texto": "Usa siempre un usuario de servicio dedicado, nunca una cuenta administrativa; confirma las rutas de API exactas con el administrador antes de dar por sentado que el conector \"no encuentra\" algo; y confirma la intención del usuario antes de cambiar el estado de un incidente real."
+      },
+      en: {
+        "toc_titulo": "Contents",
+        "toc_que_es": "What is it and what is it for?",
+        "toc_prerrequisitos": "Prerequisites",
+        "toc_fabricante": "Vendor-side setup",
+        "toc_permisos": "Required permissions",
+        "toc_ruvic": "Setup in Ruvic",
+        "toc_verificacion": "Verification",
+        "toc_problemas": "Troubleshooting",
+        "toc_faq": "FAQ and security notes",
+        "titulo": "Securonix SNYPR Connector",
+        "que_es_h2": "What is it and what is it for?",
+        "que_es_p1": "The Securonix SNYPR connector lets the Ruvic agent query and manage security incidents detected by Securonix's SIEM/UEBA platform — list incidents, view the full detail of a specific one, or update its status.",
+        "que_es_p2": "Once configured, you can ask the agent things like:",
+        "que_es_li1": "\"What critical incidents are open right now?\"",
+        "que_es_li2": "\"Give me the full detail of incident 12345.\"",
+        "que_es_li3": "\"Mark incident 12345 as closed, it was a false positive.\"",
+        "que_es_p3": "Supported operations:",
+        "tabla_op_col1": "Operation",
+        "tabla_op_col2": "What it does",
+        "tabla_op_fila1": "Lists incidents, with optional filters (status, priority, date)",
+        "tabla_op_fila2": "Gets the full detail of a specific incident",
+        "tabla_op_fila3": "Updates an incident's status",
+        "callout_alcance_titulo": "Out of scope by design",
+        "callout_alcance_texto": "This connector does not create or delete incidents, and does not manage whitelists, watchlists, or lookup tables — those capabilities are out of scope for this version.",
+        "prereq_h2": "Prerequisites",
+        "prereq_li1": "A <strong>Securonix SNYPR</strong> tenant (cloud or on-premise) network-reachable from where Ruvic runs.",
+        "prereq_li2": "A <strong>dedicated service user</strong>, with access to the incident management module — never a platform admin account.",
+        "prereq_li3": "The <strong>exact REST API paths</strong> for the tenant's specific version/installation — these can vary between versions (6.3, 6.4, cloud vs on-prem).",
+        "prereq_li4": "For testing: ideally a test tenant separate from production — there's no downloadable version of Securonix to run locally.",
+        "fabricante_h2": "Vendor-side setup",
+        "fabricante_paso1_titulo": "Ask the Securonix administrator for a dedicated service user.",
+        "fabricante_paso1_texto": "It must have access to the incident management module (read, and write if status updates will be used), without platform admin permissions.",
+        "fabricante_paso2_titulo": "Confirm the exact tenant URL.",
+        "fabricante_paso2_texto": "The typical format is the installation's hostname or IP, sometimes including <code>/snypr</code> at the end — confirm with the administrator, it varies by installation.",
+        "fabricante_paso3_titulo": "Confirm the exact incident REST API paths for that version.",
+        "fabricante_paso3_texto": "Securonix provides a Postman collection to test their API — ask the administrator to confirm (or share) the paths for \"list incidents\", \"incident detail\", and \"update status\" for the tenant's specific version, since these have changed between versions.",
+        "fabricante_paso4_titulo": "Test token generation from the command line (optional but recommended).",
+        "fabricante_curl_nota": "A response with a token (text or JSON) confirms the credentials work.",
+        "permisos_h2": "Required permissions",
+        "permisos_tabla_col1": "Permission",
+        "permisos_tabla_col2": "Why the connector needs it",
+        "permisos_lectura": "Read incidents",
+        "permisos_lectura_uso": "Needed for <code>list_incidents</code> and <code>get_incident_detail</code>",
+        "permisos_escritura": "Update incident status",
+        "permisos_escritura_uso": "Only needed if <code>update_incident_status</code> will be used",
+        "permisos_nota": "Don't grant platform admin permissions, or access to modules this connector doesn't use (whitelists, watchlists, lookup tables, system configuration).",
+        "ruvic_h2": "Setup in Ruvic",
+        "ruvic_p1": "Go to <strong>Settings → Connectors</strong>, find the <strong>Securonix SNYPR</strong> card and click <strong>Configure</strong>.",
+        "ruvic_p2": "Fill in the <strong>base URL</strong>, and the service user's <strong>username</strong> and <strong>password</strong>. Leave the advanced fields (API paths, token validity) at their defaults unless you've confirmed your tenant uses different paths.",
+        "ruvic_p3": "Save and click",
+        "boton_probar_conexion": "Test connection",
+        "verificacion_h2": "Verification",
+        "verificacion_paso1_titulo": "Successful connection test.",
+        "verificacion_paso1_texto": "The <em>Test connection</em> button should return: <em>\"Successful connection to [tenant URL]\"</em>.",
+        "verificacion_paso2_titulo": "Minimal test with the agent.",
+        "verificacion_paso2_texto": "Ask something read-only first:",
+        "verificacion_paso2_cita": "\"What open incidents are there?\"",
+        "problemas_h2": "Troubleshooting",
+        "problemas_tabla_col1": "Message / symptom",
+        "problemas_tabla_col2": "Likely cause and fix",
+        "problemas_fila1_sintoma": "\"Could not generate token...\"",
+        "problemas_fila1_causa": "Incorrect username or password. Check with the Securonix administrator.",
+        "problemas_fila2_sintoma": "\"Not found\" on list_incidents/get_incident_detail (HTTP 404)",
+        "problemas_fila2_causa": "Most likely the configured path for that endpoint doesn't match your tenant's — confirm it with the administrator and adjust the corresponding advanced field, instead of assuming there's no data.",
+        "problemas_fila3_sintoma": "\"Insufficient permissions\" (HTTP 403)",
+        "problemas_fila3_causa": "The service user doesn't have access to the incident management module, or lacks write permission to update statuses.",
+        "problemas_fila4_sintoma": "\"Could not connect...\" (timeout/network)",
+        "problemas_fila4_causa": "The tenant isn't reachable from where Ruvic runs — may require VPN or IP whitelisting.",
+        "faq_h2": "FAQ and security notes",
+        "faq_p1_titulo": "Can the agent create or delete incidents?",
+        "faq_p1_texto": "No. This version of the connector only lists, views details of, and updates the status of existing incidents.",
+        "faq_p2_titulo": "Why are some API paths configurable?",
+        "faq_p2_texto": "Because Securonix has changed its endpoint names across versions (6.3, 6.4, cloud vs on-prem), and there's no single universal path publicly documented. Making them configurable avoids waiting on a code change if your tenant uses different names.",
+        "faq_p3_titulo": "Where is the password stored?",
+        "faq_p3_texto": "As a secret in the platform's credential store. The UI never displays it again.",
+        "buenas_practicas_titulo": "Best practices",
+        "buenas_practicas_texto": "Always use a dedicated service user, never an admin account; confirm the exact API paths with the administrator before assuming the connector \"can't find\" something; and confirm the user's intent before changing the status of a real incident."
+      }
+    };
+  </script>
+</body>
+</html>
